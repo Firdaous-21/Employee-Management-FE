@@ -2,7 +2,6 @@ import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import { EmployeeService } from '../../services/employee.service';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {DepartmentService} from "../../services/departement.service";
-import {Department} from "../../models/departement.model";
 import {NgForOf, NgIf} from "@angular/common";
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 
@@ -20,7 +19,7 @@ import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 export class EmployeeFormComponent implements OnInit {
   @Output() employeeAdded = new EventEmitter<void>();
   employeeForm: FormGroup;
-  departments: Department[] = [];
+  departments: any[] = [];
   selectedFile: File | null = null;
   previewUrl: string | ArrayBuffer | null = null;
   isLoading = false;
@@ -34,8 +33,7 @@ export class EmployeeFormComponent implements OnInit {
     private employeeService: EmployeeService,
     private departmentService: DepartmentService,
     public dialogRef: MatDialogRef<EmployeeFormComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { employeeId: number }// Inject dialog ref
-  ) {
+    @Inject(MAT_DIALOG_DATA) public data: { employeeId: number }) {
     this.employeeForm = this.fb.group({
       nom: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
@@ -62,9 +60,8 @@ export class EmployeeFormComponent implements OnInit {
           nom: employee.nom,
           email: employee.email,
           age: employee.age,
-          departmentId: employee.department.id
+          departmentId: employee['departement']['id']
         });
-        // Load current photo if exists
         if (employee.photo) {
           this.previewUrl = employee.photo;
         }
@@ -93,7 +90,6 @@ export class EmployeeFormComponent implements OnInit {
     if (file) {
       this.selectedFile = file;
 
-      // Create preview
       const reader = new FileReader();
       reader.onload = () => {
         this.previewUrl = reader.result;
@@ -113,11 +109,6 @@ export class EmployeeFormComponent implements OnInit {
     this.successMessage = '';
 
     const formData = this.employeeForm.value;
-    formData.append('nom', this.employeeForm.value.nom);
-    formData.append('email', this.employeeForm.value.email);
-    formData.append('age', this.employeeForm.value.age);
-    formData.append('departmentId', this.employeeForm.value.departmentId);
-    formData.append('file', this.selectedFile);
     this.departmentService.addEmployeeToDepartment(
       formData.departmentId,
       formData.nom,
@@ -142,6 +133,6 @@ export class EmployeeFormComponent implements OnInit {
   }
 
   onClose(): void {
-    this.dialogRef.close(); // Close the dialog
+    this.dialogRef.close();
   }
 }

@@ -9,18 +9,15 @@
     </button>
   </div>
 
-  <!-- Your existing table and other content -->
-
   <!-- Department Filter -->
   <div class="filter-section">
     <label for="departmentFilter">Filter by Department:</label>
     <select id="departmentFilter" [(ngModel)]="selectedDepartmentId" (change)="loadEmployeesByDepartment()">
-      <option [value]="null">All Departments</option>
-      @for (dept of departments; track dept.id) {
-        <option value="{{dept.id}}">
-          {{ dept.nom }}
-        </option>
-      }
+      <option value="" disabled selected>All Departments</option>
+      <option value="{{0}}">Toutes</option>
+      <option *ngFor="let dept of departments" [value]="dept.id">
+        {{ dept.nom }}
+      </option>
     </select>
   </div>
 
@@ -35,41 +32,42 @@
   </div>
 
   <!-- Employee Table -->
-  <table *ngIf="!isLoading && employees.length > 0">
+  <table *ngIf="!isLoading && employees().length > 0">
     <thead>
     <tr>
-      <th>ID</th>
+      <th>Photo</th>
       <th>Name</th>
       <th>Email</th>
       <th>Age</th>
-      <th>Department</th>
-      <th>Photo</th>
+      <th>Departement</th>
       <th>Actions</th>
     </tr>
     </thead>
     <tbody>
-    <tr *ngFor="let employee of employees">
-      <td>{{ employee?.id }}</td>
-      <td>{{ employee?.nom }}</td>
-      <td>{{ employee?.email }}</td>
-      <td>{{ employee?.age }}</td>
-      <td>{{ employee?.department?.nom || '..' }}</td>
-      <td>
-        <img *ngIf="employee?.photo"
-             [src]="employee.photo"
-             alt="Employee photo"
-             class="employee-photo"
-             onerror="this.style.display='none'">
-      </td>
-      <td>
-        <button (click)="deleteEmployee(employee.id)">Delete</button>
-      </td>
-    </tr>
+      @for (employee of employees(); track employee.id) {
+        <tr>
+          <td>
+            <img *ngIf="employeePhotoUrls[employee.id]"
+                 [src]="employeePhotoUrls[employee.id]"
+                 alt="Employee photo"
+                 class="employee-photo">
+          </td>
+          <td>{{ employee.nom }}</td>
+          <td>{{ employee.email }}</td>
+          <td>{{ employee.age }}</td>
+          <td>{{ employee['departement']['nom'] }}</td>
+          <td>
+            <button mat-icon-button color="warn" (click)="deleteEmployee(employee.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      }
     </tbody>
   </table>
 
   <!-- Empty State -->
-  <div *ngIf="!isLoading && employees.length === 0" class="empty-state">
+  <div *ngIf="!isLoading && employees().length === 0" class="empty-state">
     No employees found.
   </div>
 </div>

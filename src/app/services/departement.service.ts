@@ -1,30 +1,32 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpEventType } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {catchError, Observable, throwError, tap, firstValueFrom} from 'rxjs';
 import { Employee } from '../models/employee.model';
-import {Department} from "../models/departement.model";
-import {AuthService} from "./auth.service";
+import { AuthService } from "./auth.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class DepartmentService {
   private apiUrl = 'http://localhost:8080/api/departements';
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
-  constructor(private http: HttpClient, private authService: AuthService) { }
+  departments = signal<any[]>([]);
 
-  // Get all departments
-  getAllDepartments(): Observable<Department[]> {
-    return this.http.get<Department[]>(this.apiUrl,  {
+  getAllDepartments(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl,  {
       headers: this.authService.getAuthHeaders()
     });
   }
-
-  // Add new department
   addDepartment(nom: string): Observable<any> {
-    return this.http.post(this.apiUrl, { nom }, {
+    return this.http.post<any>(this.apiUrl, { nom }, {
       headers: this.authService.getAuthHeaders()
-    });
+    }).pipe(
+      tap(newDepartment => {
+        this.departments.update(departments => [...departments, newDepartment]);
+      })
+    );
   }
 
   addEmployeeToDepartment(
@@ -49,8 +51,15 @@ export class DepartmentService {
     );
   }
 
-  // Get photo URL (for img src)
-  getPhotoUrl(id: number): string {
-    return `${this.apiUrl}/photos/${id}`;
+  getEmployeePhoto(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}`, {
+      responseType: 'blob',
+      headers: this.authService.getAuthHeaders()
+    }).pipe(
+      catchError(error => {
+        console.error('Error loading photo:', error);
+        return throwError(() => new Error('Failed to load photo'));
+      })
+    );
   }
 }
