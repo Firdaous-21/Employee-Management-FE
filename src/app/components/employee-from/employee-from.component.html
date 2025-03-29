@@ -1,8 +1,98 @@
-<input type="text" placeholder="Name" #name>
-<input type="number" placeholder="Age" #age>
-<select #departmentId>
-  <option value="1">HR</option>
-  <option value="2">IT</option>
-</select>
-<input type="file" (change)="onFileSelected($event)">
-<button (click)="addEmployee(name.value, age.value, departmentId.value)">Add Employee</button>
+<div class="employee-form-container">
+  <div>
+    <h2>Add New Employee</h2>
+    <button class="exit-btn" (click)="onClose()">×</button>
+  </div>
+
+  <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()" class="employee-form">
+    <!-- Name Field -->
+    <div class="form-group">
+      <label for="nom">Name*</label>
+      <input
+        id="nom"
+        type="text"
+        formControlName="nom"
+        [class.invalid]="employeeForm.get('nom')?.invalid && employeeForm.get('nom')?.touched">
+      <div *ngIf="employeeForm.get('nom')?.invalid && employeeForm.get('nom')?.touched" class="error-text">
+        Name is required and must be at least 2 characters
+      </div>
+    </div>
+
+    <!-- Email Field -->
+    <div class="form-group">
+      <label for="email">Email*</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        [class.invalid]="employeeForm.get('email')?.invalid && employeeForm.get('email')?.touched">
+      <div *ngIf="employeeForm.get('email')?.invalid && employeeForm.get('email')?.touched" class="error-text">
+        Please enter a valid email address
+      </div>
+    </div>
+
+    <!-- Age Field -->
+    <div class="form-group">
+      <label for="age">Age*</label>
+      <input
+        id="age"
+        type="number"
+        formControlName="age"
+        [class.invalid]="employeeForm.get('age')?.invalid && employeeForm.get('age')?.touched">
+      <div *ngIf="employeeForm.get('age')?.invalid && employeeForm.get('age')?.touched" class="error-text">
+        Age must be between 18 and 65
+      </div>
+    </div>
+
+    <!-- Department Selection -->
+    <div class="form-group">
+      <label for="departmentId">Department*</label>
+      <select
+        id="departmentId"
+        formControlName="departmentId"
+        [class.invalid]="employeeForm.get('departmentId')?.invalid && employeeForm.get('departmentId')?.touched">
+        <option value="">Select Department</option>
+        <option *ngFor="let dept of departments" [value]="dept.id">
+          {{ dept.nom }}
+        </option>
+      </select>
+      <div *ngIf="employeeForm.get('departmentId')?.invalid && employeeForm.get('departmentId')?.touched" class="error-text">
+        Please select a department
+      </div>
+    </div>
+
+    <!-- Photo Upload -->
+    <div class="form-group">
+      <label for="photo">Photo*</label>
+      <input
+        id="photo"
+        type="file"
+        accept="image/*"
+        (change)="onFileSelected($event)">
+      <div *ngIf="!selectedFile && employeeForm.touched" class="error-text">
+        Please select a photo
+      </div>
+      <div *ngIf="previewUrl" class="photo-preview">
+        <img [src]="previewUrl" alt="Preview">
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        [disabled]="isLoading || employeeForm.invalid || !selectedFile"
+        class="submit-btn">
+        {{ isLoading ? 'Adding...' : 'Add Employee' }}
+      </button>
+    </div>
+
+    <!-- Messages -->
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+    <div *ngIf="successMessage" class="success-message">
+      {{ successMessage }}
+    </div>
+  </form>
+</div>

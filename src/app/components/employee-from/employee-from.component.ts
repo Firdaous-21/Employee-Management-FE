@@ -1,32 +1,147 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import { EmployeeService } from '../../services/employee.service';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
+import {DepartmentService} from "../../services/departement.service";
+import {Department} from "../../models/departement.model";
+import {NgForOf, NgIf} from "@angular/common";
+import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 
 @Component({
   selector: 'app-employee-form',
   templateUrl: './employee-from.component.html',
   styleUrls: ['./employee-from.component.css'],
+  imports: [
+    ReactiveFormsModule,
+    NgIf,
+    NgForOf
+  ],
   standalone: true
 })
 export class EmployeeFormComponent implements OnInit {
-  employeeData = new FormData();
+  @Output() employeeAdded = new EventEmitter<void>();
+  employeeForm: FormGroup;
+  departments: Department[] = [];
+  selectedFile: File | null = null;
+  previewUrl: string | ArrayBuffer | null = null;
+  isLoading = false;
+  errorMessage = '';
+  successMessage = '';
+  isEditMode = false;
+  currentEmployeeId?: number;
 
-  constructor(private employeeService: EmployeeService) {}
-
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    this.employeeData.append('photo', file);
-  }
-
-  addEmployee(name: string, age: string, departmentId: string) {
-    this.employeeData.append('name', name);
-    this.employeeData.append('age', String(age));
-    this.employeeData.append('departmentId', String(departmentId));
-
-    this.employeeService.addEmployee(this.employeeData).subscribe(() => {
-      console.log('Employee added successfully!');
+  constructor(
+    private fb: FormBuilder,
+    private employeeService: EmployeeService,
+    private departmentService: DepartmentService,
+    public dialogRef: MatDialogRef<EmployeeFormComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { employeeId: number }// Inject dialog ref
+  ) {
+    this.employeeForm = this.fb.group({
+      nom: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      age: ['', [Validators.required, Validators.min(18), Validators.max(65)]],
+      departmentId: ['', Validators.required]
     });
+
+    if (data?.employeeId) {
+      this.isEditMode = true;
+      this.currentEmployeeId = data.employeeId;
+    }
   }
 
   ngOnInit(): void {
+    this.loadDepartments();
+    if (this.isEditMode) {
+      this.loadEmployeeData();
+    }
+  }
+  loadEmployeeData(): void {
+    this.employeeService.getEmployee(this.currentEmployeeId!).subscribe({
+      next: (employee) => {
+        this.employeeForm.patchValue({
+          nom: employee.nom,
+          email: employee.email,
+          age: employee.age,
+          departmentId: employee.department.id
+        });
+        // Load current photo if exists
+        if (employee.photo) {
+          this.previewUrl = employee.photo;
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load employee data:', err);
+        this.errorMessage = 'Failed to load employee data';
+      }
+    });
+  }
+
+  loadDepartments(): void {
+    this.departmentService.getAllDepartments().subscribe({
+      next: (departments) => {
+        this.departments = departments;
+      },
+      error: (err) => {
+        console.error('Failed to load departments:', err);
+        this.errorMessage = 'Failed to load departments';
+      }
+    });
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.previewUrl = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onSubmit(): void {
+    if (this.employeeForm.invalid || !this.selectedFile) {
+      this.errorMessage = 'Please fill all required fields and select a photo';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const formData = this.employeeForm.value;
+    formData.append('nom', this.employeeForm.value.nom);
+    formData.append('email', this.employeeForm.value.email);
+    formData.append('age', this.employeeForm.value.age);
+    formData.append('departmentId', this.employeeForm.value.departmentId);
+    formData.append('file', this.selectedFile);
+    this.departmentService.addEmployeeToDepartment(
+      formData.departmentId,
+      formData.nom,
+      formData.email,
+      formData.age,
+      this.selectedFile!
+    ).subscribe({
+      next: (newEmployee) => {
+        this.isLoading = false;
+        this.successMessage = 'Employee added successfully!';
+        this.employeeForm.reset();
+        this.previewUrl = null;
+        this.selectedFile = null;
+        this.employeeAdded.emit();
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.message || 'Failed to add employee';
+        console.error('Error adding employee:', err);
+      }
+    });
+  }
+
+  onClose(): void {
+    this.dialogRef.close(); // Close the dialog
   }
 }

@@ -23,17 +23,26 @@ export class LoginComponent {
   username: string = '';
   password: string = '';
   errorMessage: string = '';
+  isLoading: boolean = false;
 
-  constructor(private authService: AuthService, private router: Router, private http: HttpClient) {
-  }
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
   login() {
-    // Simulate login validation (you can replace this with actual validation logic)
-    if (this.username === 'admin' && this.password === 'password') {
-      // If login is successful, navigate to the employee-list component
-      this.router.navigate(['/employee-list']);
-    } else {
-      // If login fails, show an error message
-      this.errorMessage = 'Invalid username or password';
-    }
+    this.isLoading = true; // Show loading spinner (if you have one)
+    this.errorMessage = ''; // Clear previous errors
+
+    this.authService.login(this.username, this.password).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        this.router.navigate(['employee-list']); // Redirect on success
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.error?.message || 'Login failed. Check your credentials.';
+      }
+    });
   }
 }

@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Employee } from '../models/employee.model';
 import {Department} from "../models/departement.model";
+import {AuthService} from "./auth.service";
 
 @Injectable({
   providedIn: 'root'
@@ -10,51 +11,46 @@ import {Department} from "../models/departement.model";
 export class DepartmentService {
   private apiUrl = 'http://localhost:8080/api/departements';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private authService: AuthService) { }
 
   // Get all departments
   getAllDepartments(): Observable<Department[]> {
-    return this.http.get<Department[]>(this.apiUrl);
-  }
-
-  // Add a new department
-  addDepartment(departmentName: string): Observable<Department> {
-    return this.http.post<Department>(this.apiUrl, null, {
-      params: { departement: departmentName }
+    return this.http.get<Department[]>(this.apiUrl,  {
+      headers: this.authService.getAuthHeaders()
     });
   }
 
-  // Add employee to a department
+  // Add new department
+  addDepartment(nom: string): Observable<any> {
+    return this.http.post(this.apiUrl, { nom }, {
+      headers: this.authService.getAuthHeaders()
+    });
+  }
+
   addEmployeeToDepartment(
     departmentId: number,
-    employeeData: {
-      nom: string;
-      email: string;
-      age: number;
-      file: File;
-    }
+    nom: string,
+    email: string,
+    age: number,
+    file: File
   ): Observable<Employee> {
     const formData = new FormData();
-    formData.append('nom', employeeData.nom);
-    formData.append('email', employeeData.email);
-    formData.append('age', employeeData.age.toString());
-    formData.append('file', employeeData.file);
+    formData.append('nom', nom);
+    formData.append('email', email);
+    formData.append('age', age.toString());
+    formData.append('file', file);
 
     return this.http.post<Employee>(
       `${this.apiUrl}/${departmentId}/employees`,
-      formData
+      formData,
+      {
+        headers: this.authService.getAuthHeadersForMultipart()
+      }
     );
   }
 
-  // Get employee photo
-  getEmployeePhoto(employeeId: string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/photos/${employeeId}`, {
-      responseType: 'blob'
-    });
-  }
-
-  // Helper method to create photo URL
-  getPhotoUrl(employeeId: string): string {
-    return `${this.apiUrl}/photos/${employeeId}`;
+  // Get photo URL (for img src)
+  getPhotoUrl(id: number): string {
+    return `${this.apiUrl}/photos/${id}`;
   }
 }

@@ -1,8 +1,10 @@
+import {Department} from "./departement.model";
+
 export interface Employee {
   id: number;
-  name: string;
+  nom: string;
   email: string;
   age: number;
-  departmentId: number;
-  photoUrl: string;
+  department: Department;
+  photo: string;
 }

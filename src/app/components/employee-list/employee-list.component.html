@@ -1,34 +1,75 @@
-<div class="container mt-5">
-  <div class="row">
-    <div class="col-12">
-      <h3>Employee List</h3>
-      <button class="btn btn-primary mb-3" (click)="addEmployee">Add New Employee</button>
-      <table class="table table-bordered">
-        <thead>
-        <tr>
-          <th>#</th>
-          <th>Employee Name</th>
-          <th>Position</th>
-          <th>Photo</th>
-          <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr *ngFor="let employee of employees; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ employee.name }}</td>
-          <td>{{ employee.email }}</td>
-          <td>{{ employee.departmentId }}</td>
-          <td>
-            <img *ngIf="employee.photoUrl" [src]="employee.photoUrl" alt="photo" width="50" height="50" />
-          </td>
-          <td>
-            <button class="btn btn-warning" (click)="editEmployee(employee.id)">Edit</button>
-            <button class="btn btn-danger" (click)="deleteEmployee(employee.id)">Delete</button>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-    </div>
+<div class="employee-list-container">
+  <h2>Employee List</h2>
+  <div class="header-actions">
+    <button mat-raised-button color="primary" (click)="openAddEmployeeDialog()">
+      <mat-icon>person_add</mat-icon> Add Employee
+    </button>
+    <button mat-raised-button color="accent" (click)="openAddDepartmentDialog()">
+      <mat-icon>add_business</mat-icon> Add Department
+    </button>
+  </div>
+
+  <!-- Your existing table and other content -->
+
+  <!-- Department Filter -->
+  <div class="filter-section">
+    <label for="departmentFilter">Filter by Department:</label>
+    <select id="departmentFilter" [(ngModel)]="selectedDepartmentId" (change)="loadEmployeesByDepartment()">
+      <option [value]="null">All Departments</option>
+      @for (dept of departments; track dept.id) {
+        <option value="{{dept.id}}">
+          {{ dept.nom }}
+        </option>
+      }
+    </select>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="loading-indicator">
+    Loading employees...
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Employee Table -->
+  <table *ngIf="!isLoading && employees.length > 0">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Age</th>
+      <th>Department</th>
+      <th>Photo</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let employee of employees">
+      <td>{{ employee?.id }}</td>
+      <td>{{ employee?.nom }}</td>
+      <td>{{ employee?.email }}</td>
+      <td>{{ employee?.age }}</td>
+      <td>{{ employee?.department?.nom || '..' }}</td>
+      <td>
+        <img *ngIf="employee?.photo"
+             [src]="employee.photo"
+             alt="Employee photo"
+             class="employee-photo"
+             onerror="this.style.display='none'">
+      </td>
+      <td>
+        <button (click)="deleteEmployee(employee.id)">Delete</button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && employees.length === 0" class="empty-state">
+    No employees found.
   </div>
 </div>

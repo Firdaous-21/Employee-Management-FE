@@ -29,7 +29,7 @@ export class RegisterComponent {
     this.authService.register(this.username, this.password).subscribe({
       next: () => {
         this.successMessage = 'Registration successful';
-        this.router.navigate(['/login']);
+        this.router.navigate(['/app-login']);
       },
       error: () => (this.errorMessage = 'Registration failed'),
     });
