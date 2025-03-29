@@ -1,0 +1,8 @@
+<input type="text" placeholder="Name" #name>
+<input type="number" placeholder="Age" #age>
+<select #departmentId>
+  <option value="1">HR</option>
+  <option value="2">IT</option>
+</select>
+<input type="file" (change)="onFileSelected($event)">
+<button (click)="addEmployee(name.value, age.value, departmentId.value)">Add Employee</button>
